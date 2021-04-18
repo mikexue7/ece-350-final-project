@@ -11,8 +11,6 @@ module VGAController(
 	output[3:0] VGA_R,  // Red Signal Bits
 	output[3:0] VGA_G,  // Green Signal Bits
 	output[3:0] VGA_B,  // Blue Signal Bits
-	output [7:0] whichLED,
-	output [6:0] LED_out,
 	inout ps2_clk,
 	inout ps2_data);
 
@@ -28,6 +26,18 @@ module VGAController(
 		pixCounter <= pixCounter + 1; // Since the reg is only 3 bits, it will reset every 8 cycles
 	end
 
+	reg onUpdate;
+	reg [21:0] count;
+
+	always@(posedge clk)
+	begin
+		count <= count + 1;
+		if(count == 10000000)
+		begin
+			onUpdate <= ~onUpdate;
+			count <= 0;
+		end
+	end
 
 	// VGA Timing Generation for a Standard VGA Screen
 	localparam
@@ -92,7 +102,7 @@ module VGAController(
 	// Assign to output color from register if active
 	wire[BITS_PER_COLOR-1:0] colorOut, colorOut2; 			  // Output color
 
-	assign colorOut2 = (isWithin | isFood | ~displayInBounds) ? 12'd0 : colorData;
+	assign colorOut2 = (isWithin | isFood) ? 12'd0 : colorData;
 	assign colorOut = active ? colorOut2 : 12'd0; // When not active, output black
 
 	// Quickly assign the output colors to their channels using concatenation
@@ -111,19 +121,17 @@ module VGAController(
 	lsfr_x FOODX(clk, isEaten, 1'b0, 10'd241, foodX_temp2);
 	lsfr_y FOODY(clk, isEaten, 1'b0, 10'd242, foodY_temp2);
 
-
-	assign foodX_temp = foodX_temp2 % 10'd601 + 15;
-	assign foodY_temp = foodY_temp2 % 10'd441 + 15;
-
+	assign foodX_temp = foodX_temp2 % 10'd640;
+	assign foodY_temp = foodY_temp2 % 10'd480;
 
 	reg [1:0] prevMotion;
 
 	initial
 	begin
-			refX_out = 320;
-			refY_out = 240;
-			foodX = 250;
-			foodY = 300;
+			refX_out = 0;
+			refY_out = 0;
+			foodX = foodX_temp;
+			foodY = foodY_temp;
 			prevMotion = 2'b01;
 	end
 
@@ -153,35 +161,32 @@ module VGAController(
 	assign isEaten = L <= L_food && R >= R_food && T <= T_food && B >= B_food;
 
 
-	wire isWithin;
-	assign isWithin = x >= L & x <= R & y >= T & y <= B;
+	reg isWithin = 0;
+	// assign isWithin = x >= L & x <= R & y >= T & y <= B;
 
-	reg[6:0] score;
+	reg [9:0] sL, sR;
+	reg [8:0] sT, sB;
+
+
+	integer j;
+	reg [4:0] size = 1;
+
 
 	wire isFood;
 	assign isFood = x >= L_food & x <=R_food & y>= T_food & y <= B_food;
-
-
-	wire displayInBounds;
-	assign displayInBounds = x >= 15 && x <= 625 && y >= 15 && y <= 465;
-
-	wire inBounds;
-	assign inBounds = L >= 15 && R <= 625 && T >= 15 && B <= 465;
-
-
-
+	reg [9:0] snakeX[0:31];
+	reg [8:0] snakeY[0:31];
 
 	integer i;
 	//Set value of q on positive edge of the clock or clear
 	always @(posedge clk) begin
 			// Read in input of the FPGA directions
-			if (reset | ~inBounds) begin
-					refX_out <= 320;
-					refY_out <= 240;
+			if (reset) begin
+					refX_out <= 0;
+					refY_out <= 0;
 					foodX <= 250;
 					foodY <= 250;
 					prevMotion <= 2'b01;
-					score <= 0;
 			end else if (up) begin
 					//refY_out <= refY_out - 1;
 					prevMotion <= 2'b00;
@@ -200,7 +205,7 @@ module VGAController(
 			if (isEaten & screenEnd) begin
 				foodX <= foodX_temp;
 				foodY <= foodY_temp;
-				score <= score + 1;
+				size <= size + 1;
 			end
 
 			// control next pixel movement
@@ -214,12 +219,35 @@ module VGAController(
 					refX_out <= refX_out + 1;
 			end
 
+			// Set snake head to be location registered on FPGA
+			snakeY[0] <= refY_out;
+			snakeX[0] <= refX_out;
+
+
 	end
 
+	always @(posedge onUpdate) begin
 
-	SS_Controller C(clk, reset, score, whichLED, LED_out);
+		// every element of the snake body follows the element before it
+		for(i = 1; i > 0; i=i-1)begin
+					snakeX[i] <= snakeX[i - 1];
+					snakeY[i] <= snakeY[i - 1];
+		end
 
+		// For each snake body piece, draw pixel boundary and determine if its within to display a black pixel where
+		// the snake is
+		for(j = 0; j < 1; j=j+1)begin
+				sL <= snakeX[j];
+				sR <= snakeX[j] + 20;
+				sT <= snakeY[j];
+				sB <= snakeY[j] + 20;
+				isWithin <= (x >= sL & x <= sR & y >= sT & y <= sB);
 
+				if(isWithin == 1)begin
+					j = 100;
+				end
+		end
 
+	end
 
 endmodule
