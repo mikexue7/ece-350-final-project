@@ -226,26 +226,26 @@ module VGAController(
 
 	end
 
-	always @(posedge onUpdate) begin
+	always @(posedge clk25) begin
 
 		// every element of the snake body follows the element before it
-		for(i = 1; i > 0; i=i-1)begin
+		for(i = size - 1; i > 0; i=i-1)begin
 					snakeX[i] <= snakeX[i - 1];
 					snakeY[i] <= snakeY[i - 1];
 		end
 
 		// For each snake body piece, draw pixel boundary and determine if its within to display a black pixel where
 		// the snake is
-		for(j = 0; j < 1; j=j+1)begin
+		for(j = 0; j < size; j=j+1)begin
 				sL <= snakeX[j];
 				sR <= snakeX[j] + 20;
 				sT <= snakeY[j];
 				sB <= snakeY[j] + 20;
-				isWithin <= (x >= sL & x <= sR & y >= sT & y <= sB);
+				isWithin <= isWithin || (x >= sL & x <= sR & y >= sT & y <= sB);
 
-				if(isWithin == 1)begin
-					j = 100;
-				end
+				// if(isWithin == 1)begin
+				// 	j = 100;
+				// end
 		end
 
 	end
