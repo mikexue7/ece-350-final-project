@@ -1,7 +1,7 @@
 module SS_Controller(
     input clock_100Mhz,
     input reset,
-		input [6:0] displayed_number,
+		input [5:0] displayed_number,
     output reg [7:0] Anode_Activate,
     output reg [6:0] LED_out
     );
@@ -14,7 +14,7 @@ module SS_Controller(
         if(reset==1)
             refresh_counter <= 0;
         else
-            refresh_counter <= refresh_counter + 2;
+            refresh_counter <= refresh_counter + 10;
     end
     assign LED_activating_counter = refresh_counter[19:18];
 
