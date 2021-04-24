@@ -81,17 +81,18 @@ module processor(
   wire [4:0] Opcode_FD, rd_FD, rs_FD, rt_FD, shamt_FD, ALU_op_FD;
   wire [16:0] Immediate_FD;
   wire [26:0] Target_FD;
-  wire BLT_FD, JP_FD, JR_FD, JAL_FD, BNE_FD, DMwe_FD, Rwd_FD, ALUinB_FD, Rwe_FD, read_rd_FD, branch_FD, bex_FD, setx_FD;
+  wire BLT_FD, JP_FD, JR_FD, JAL_FD, BNE_FD, DMwe_FD, Rwd_FD, ALUinB_FD, Rwe_FD, read_rd_FD, branch_FD, bex_FD, setx_FD, bexeq_FD;
 
   control FD_CTRL(FD_IM_out, Opcode_FD, ALU_op_FD, rd_FD, rs_FD, rt_FD, shamt_FD, Immediate_FD, Target_FD,
-    BLT_FD, JP_FD, JR_FD, JAL_FD, BNE_FD, DMwe_FD, Rwd_FD, ALUinB_FD, Rwe_FD, read_rd_FD, branch_FD, bex_FD, setx_FD);
+    BLT_FD, JP_FD, JR_FD, JAL_FD, BNE_FD, DMwe_FD, Rwd_FD, ALUinB_FD, Rwe_FD, read_rd_FD, branch_FD, bex_FD, setx_FD, bexeq_FD);
 
 
-  assign ctrl_readRegA = bex_FD ? 5'd30 : rs_FD;
+
+  assign ctrl_readRegA = (bex_FD || bexeq_FD) ? 5'd30 : rs_FD;
 
   wire [4:0] ctrl_readRegB_temp;
   assign ctrl_readRegB_temp = read_rd_FD ? rd_FD : rt_FD;
-  assign ctrl_readRegB = bex_FD ? 5'd0 : ctrl_readRegB_temp;
+  assign ctrl_readRegB = (bex_FD || bexeq_FD) ? 5'd0 : ctrl_readRegB_temp;
 
   wire status;
   wire [4:0] temp_ctrl_writeReg;
@@ -118,9 +119,9 @@ module processor(
   wire [4:0] Opcode_DX, rd_DX, rs_DX, rt_DX, shamt_DX, ALU_op_DX;
   wire [16:0] Immediate_DX;
   wire [26:0] Target_DX;
-  wire BLT_DX, JP_DX, JR_DX, JAL_DX, BNE_DX, DMwe_DX, Rwd_DX, ALUinB_DX, Rwe_DX, read_rd_DX, branch_DX, bex_DX, setx_DX;
+  wire BLT_DX, JP_DX, JR_DX, JAL_DX, BNE_DX, DMwe_DX, Rwd_DX, ALUinB_DX, Rwe_DX, read_rd_DX, branch_DX, bex_DX, setx_DX, bexeq_DX;
   control DX_CTRL(DX_IM_out, Opcode_DX, ALU_op_DX, rd_DX, rs_DX, rt_DX, shamt_DX, Immediate_DX, Target_DX,
-     BLT_DX, JP_DX, JR_DX, JAL_DX, BNE_DX, DMwe_DX, Rwd_DX, ALUinB_DX, Rwe_DX, read_rd_DX, branch_DX, bex_DX, setx_DX);
+     BLT_DX, JP_DX, JR_DX, JAL_DX, BNE_DX, DMwe_DX, Rwd_DX, ALUinB_DX, Rwe_DX, read_rd_DX, branch_DX, bex_DX, setx_DX, bexeq_DX);
 
   wire add_DX, addi_DX, sub_DX, and_op_DX, or_op_DX, sll_DX, sra_DX, mul_DX, div_DX;
   alu_control DX_ALU_CTRL(Opcode_DX, ALU_op_DX, add_DX, addi_DX, sub_DX, and_op_DX, or_op_DX, sll_DX, sra_DX, mul_DX, div_DX);
@@ -148,7 +149,11 @@ module processor(
   wire [31:0] O_out_XM;
   mux_4 MUX1(A_bypass, ALUinA_select, O_out_XM, data_writeReg, A_out_DX, A_out_DX);
   mux_4 MUX2(B, ALUinB_select, O_out_XM, data_writeReg, B_out_DX, B_out_DX);
-  assign B_bypass = ALUinB_DX ? SE_Immediate_DX : B;
+
+  wire[31:0] B_bexeq;
+  assign B_bexeq[4:0] = rd_DX;
+  assign B_bexeq[31:5] = 27'b0;
+  assign B_bypass = bexeq_DX ? B_bexeq : (ALUinB_DX ? SE_Immediate_DX : B);
   alu ALU1(A_bypass, B_bypass, ALU_op_DX, shamt_DX, ALU_output, isNotEqual, isLessThan, Ovf);
 
   wire [31:0] A_bypass_out, B_bypass_out;
@@ -224,9 +229,9 @@ module processor(
   wire [4:0] Opcode_XM, rd_XM, rs_XM, rt_XM, shamt_XM, ALU_op_XM;
   wire [16:0] Immediate_XM;
   wire [26:0] Target_XM;
-  wire BLT_XM, JP_XM, JR_XM, JAL_XM, BNE_XM, DMwe_XM, Rwd_XM, ALUinB_XM, Rwe_XM, read_rd_XM, branch_XM, bex_XM, setx_XM;
+  wire BLT_XM, JP_XM, JR_XM, JAL_XM, BNE_XM, DMwe_XM, Rwd_XM, ALUinB_XM, Rwe_XM, read_rd_XM, branch_XM, bex_XM, setx_XM, bexeq_XM;
   control XM_CTRL(XM_IM_out, Opcode_XM, ALU_op_XM, rd_XM, rs_XM, rt_XM, shamt_XM, Immediate_XM, Target_XM,
-     BLT_XM, JP_XM, JR_XM, JAL_XM, BNE_XM, DMwe_XM, Rwd_XM, ALUinB_XM, Rwe_XM, read_rd_XM, branch_XM, bex_XM, setx_XM);
+     BLT_XM, JP_XM, JR_XM, JAL_XM, BNE_XM, DMwe_XM, Rwd_XM, ALUinB_XM, Rwe_XM, read_rd_XM, branch_XM, bex_XM, setx_XM, bexeq_XM);
 
 
   assign address_dmem = O_out_XM;
@@ -244,9 +249,9 @@ module processor(
   wire [4:0] Opcode_MW, rs_MW, rt_MW, shamt_MW, ALU_op_MW;
   wire [16:0] Immediate_MW;
   wire [26:0] Target_MW;
-  wire BLT_MW, JP_MW, JR_MW, BNE_MW, DMwe_MW, Rwd_MW, ALUinB_MW, read_rd_MW, branch_MW, bex_MW, setx_MW;
+  wire BLT_MW, JP_MW, JR_MW, BNE_MW, DMwe_MW, Rwd_MW, ALUinB_MW, read_rd_MW, branch_MW, bex_MW, setx_MW, bexeq_MW;
   control MW_CTRL(MW_IM_out, Opcode_MW, ALU_op_MW, rd_MW, rs_MW, rt_MW, shamt_MW, Immediate_MW, Target_MW,
-    BLT_MW, JP_MW, JR_MW, JAL_MW, BNE_MW, DMwe_MW, Rwd_MW, ALUinB_MW, Rwe_MW, read_rd_MW, branch_MW, bex_MW, setx_MW);
+    BLT_MW, JP_MW, JR_MW, JAL_MW, BNE_MW, DMwe_MW, Rwd_MW, ALUinB_MW, Rwe_MW, read_rd_MW, branch_MW, bex_MW, setx_MW, bexeq_MW);
 
   wire add_MW, addi_MW, sub_MW, and_op_MW, or_op_MW, sll_MW, sra_MW, mul_MW, div_MW;
   alu_control MW_ALU_CTRL(Opcode_MW, ALU_op_MW, add_MW, addi_MW, sub_MW, and_op_MW, or_op_MW, sll_MW, sra_MW, mul_MW, div_MW);
@@ -260,8 +265,8 @@ module processor(
   assign data_writeReg = mul_or_div_MW ? multdiv_result_out : data_writeReg_temp;
 
   // ------------------------ Instruction Memory Processing ------------------
-  wire [31:0] PC_plus_one_2, PC_plus_one_3, PC_plus_one_4;
-  register PC_REG(PC_output, 1'b1, clock, reset, PC_plus_one_4, multdiv_nop_select);
+  wire [31:0] PC_plus_one_2, PC_plus_one_3, PC_plus_one_4, PC_plus_one_5;
+  register PC_REG(PC_output, 1'b1, clock, reset, PC_plus_one_5, multdiv_nop_select);
 
   wire Cout, PC_Ovf;
   adder ADD1(PC_plus_one, Cout, PC_Ovf, PC_output, 1, 1'b0);
@@ -285,6 +290,7 @@ module processor(
   assign PC_plus_one_2 = take_branch ? branch_PC : PC_plus_one;
   assign PC_plus_one_3 = useAddressinPC ? SE_Target_DX : PC_plus_one_2;
   assign PC_plus_one_4 = JR_DX ? B : PC_plus_one_3;
+  assign PC_plus_one_5 = (bexeq_DX && ~isNotEqual) ? SE_Target_DX : PC_plus_one_4;
 
   assign address_imem = PC_output;
 

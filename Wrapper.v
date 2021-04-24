@@ -24,13 +24,14 @@
  *
  **/
 
-module Wrapper (clock, reset, up, down, left, right, VGA_R, VGA_G, VGA_B, whichLED, LED_out, hSync, vSync,
+module Wrapper (clock, reset, up, down, left, right, micData, VGA_R, VGA_G, VGA_B, whichLED, LED_out, hSync, vSync,
 	ps2_clk,
   ps2_data,
-	reg1, sf
+	reg1, sf,
+	chSel, audioOut, audioEn, micClk
 	);
 
-	input clock, reset, up, down, left, right;
+	input clock, reset, up, down, left, right, micData;
 
 	inout ps2_clk, ps2_data;
 
@@ -42,6 +43,7 @@ module Wrapper (clock, reset, up, down, left, right, VGA_R, VGA_G, VGA_B, whichL
 		memAddr, memDataIn, memDataOut;
 
 
+	output chSel, audioOut, audioEn, micClk;
 	output [3:0] VGA_R, VGA_G, VGA_B;
 	output [7:0] whichLED;
 	output [6:0] LED_out;
@@ -50,7 +52,7 @@ module Wrapper (clock, reset, up, down, left, right, VGA_R, VGA_G, VGA_B, whichL
 	output sf;
 
 	wire [5:0] score;
-	wire score_flag;
+	wire score_flag, isEaten;
 
 	// ADD YOUR MEMORY FILE HERE
 	localparam INSTR_FILE = "D:/alternateC/snake_processor/Test Files/Memory Files/addScore";
@@ -71,7 +73,9 @@ module Wrapper (clock, reset, up, down, left, right, VGA_R, VGA_G, VGA_B, whichL
 		.data(memDataIn), .q_dmem(memDataOut));
 
 	VGAController Screen(clock, reset, up, left, down, right, score, score_flag, isEaten, hSync, vSync, VGA_R, VGA_G, VGA_B,
-			whichLED,LED_out, ps2_clk, ps2_data);
+			whichLED, LED_out, ps2_clk, ps2_data);
+
+	AudioController A(clock, micData, score_flag, isEaten, chSel, audioOut);
 
 	// Instruction Memory (ROM)
 	ROM #(.MEMFILE({INSTR_FILE, ".mem"}))
@@ -94,8 +98,7 @@ module Wrapper (clock, reset, up, down, left, right, VGA_R, VGA_G, VGA_B, whichL
 		.dataIn(memDataIn),
 		.dataOut(memDataOut));
 
-	assign sf = isEaten;
-
-
+	assign sf = score_flag;
+	assign audioEn = 1'b1;
 
 endmodule

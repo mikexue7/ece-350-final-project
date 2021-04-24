@@ -93,10 +93,12 @@ module VGAController(
 
 
 	// Assign to output color from register if active
-	wire[BITS_PER_COLOR-1:0] colorOut, colorOut2; 			  // Output color
+	wire[BITS_PER_COLOR-1:0] colorOut, colorOut2, colorOut3, colorOut4; 			  // Output color
 
-	assign colorOut2 = (isWithin | isFood | ~displayInBounds) ? 12'd0 : colorData;
-	assign colorOut = active ? colorOut2 : 12'd0; // When not active, output black
+  assign colorOut3 = isFood ? 12'b111100000000 : colorData; // red for apple
+	assign colorOut2 = (isWithin) ? 12'd0 : colorOut3;
+	assign colorOut4 = ~displayInBounds ? 12'b100101000000 : colorOut2;
+	assign colorOut = active ? colorOut4 : 12'd0; // When not active, output black
 
 	// Quickly assign the output colors to their channels using concatenation
 	assign {VGA_R, VGA_G, VGA_B} = colorOut;
@@ -170,8 +172,6 @@ module VGAController(
 	wire inBounds;
 	assign inBounds = L >= 15 && R <= 625 && T >= 15 && B <= 465;
 
-
-
 	assign score_flag = (isEaten & screenEnd) ? 1'b1 : 1'b0;
 
 	integer i;
@@ -216,6 +216,7 @@ module VGAController(
 			end
 
 	end
+
 
 	SS_Controller C(clk, reset, score, whichLED, LED_out);
 

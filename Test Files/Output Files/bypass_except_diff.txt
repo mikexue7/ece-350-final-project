@@ -1,0 +1,5 @@
+Reg:  1 Expected:  2147483647 Actual:           0
+Reg:  2 Expected:           2 Actual:           0
+Reg:  3 Expected:           1 Actual:           0
+Reg:  4 Expected:           3 Actual:           0
+Reg: 30 Expected:           1 Actual:           0

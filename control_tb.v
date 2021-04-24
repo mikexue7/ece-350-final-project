@@ -8,26 +8,26 @@ module control_tb;
   wire [16:0] Immediate;
   wire [26:0] Target;
   wire BLT, JP, JR, JAL, BNE, DMwe, Rwd, ALUinB, Rwe, read_rd;
-  wire add, addi, sub, and_op, or_op, sll, sra, mul, div, lw, sw, branch, bex, setx;
+  wire add, addi, sub, and_op, or_op, sll, sra, mul, div, lw, sw, branch, bex, setx, bexeq;
 
 	//Instantiate the module to test
   control CTRL(instruction, Opcode, ALU_op, rd, rs, rt, shamt, Immediate, Target,
-    BLT, JP, JR, JAL, BNE, DMwe, Rwd, ALUinB, Rwe, read_rd, branch, bex, setx);
+    BLT, JP, JR, JAL, BNE, DMwe, Rwd, ALUinB, Rwe, read_rd, branch, bex, setx, bexeq);
 
 	wire temp;
 
 	assign temp = 1'bx == 1'bx;
 	integer i;
 
-  assign {instruction} = 32'b10110000000000000000000000001101;
+  assign {instruction} = 32'b11111001100000000000000000000010; // 10110000000000000000000000000010
 	initial begin
 		for(i = 0; i < 1; i = i + 1) begin
 			#20
 			//Display
 			$display("Instruction:%b => Opcode:%b, ALU_op:%b, rd:%b, rs:%b, rt:%b, Immediate:%b, Target:%b",
       instruction, Opcode, ALU_op, rd, rs, rt, Immediate, Target);
-      $display("BLT:%b, JP:%b, JR:%b, JAL:%b, BNE:%b, DMwe:%b, Rwd:%b, ALUinB:%b, Rwe:%b, branch:%b, bex:%b, setx:%b",
-      BLT, JP, JR, JAL, BNE, DMwe, Rwd, ALUinB, Rwe, branch, bex, setx);
+      $display("BLT:%b, JP:%b, JR:%b, JAL:%b, BNE:%b, DMwe:%b, Rwd:%b, ALUinB:%b, Rwe:%b, branch:%b, bex:%b, setx:%b, bexeq:%b",
+      BLT, JP, JR, JAL, BNE, DMwe, Rwd, ALUinB, Rwe, branch, bex, setx, bexeq);
 			$display("temp:%b ", temp);
 
 		end

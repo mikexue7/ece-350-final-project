@@ -243,9 +243,6 @@ module VGAController(
 				sB <= snakeY[j] + 20;
 				isWithin <= isWithin || (x >= sL & x <= sR & y >= sT & y <= sB);
 
-				// if(isWithin == 1)begin
-				// 	j = 100;
-				// end
 		end
 
 	end

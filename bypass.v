@@ -27,7 +27,7 @@ module bypass (ALUinA_select, ALUinB_select, DMinB_select, rs_DX, rt_DX, rd_XM, 
    assign rd_XM_temp2 = JAL_XM ? 5'd31 : rd_XM_temp1;
 
    wire [4:0] rs_DX_temp1;
-   assign rs_DX_temp1 = bex_DX ? 5'd30 : rs_DX;
+   assign rs_DX_temp1 = (bex_DX) ? 5'd30 : rs_DX;
 
    assign temp1 = rs_DX_temp1 ^ rd_XM_temp2;
    assign equal1 = ~|temp1;  // D/X.IR.RS1 == X/M.IR.RD
